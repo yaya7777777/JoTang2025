@@ -1,6 +1,6 @@
 ### #概念理解
 
->这网站好玩：https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.03&regularizationRate=0&noise=0&networkShape=4,2&seed=0.51895&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false
+>这网站好玩：[Neural Network Playground](https://playground.tensorflow.org/#activation=tanh&batchSize=10&dataset=circle&regDataset=reg-plane&learningRate=0.03&regularizationRate=0&noise=0&networkShape=4,2&seed=0.51895&showTestData=false&discretize=false&percTrainData=50&x=true&y=true&xTimesY=false&xSquared=false&ySquared=false&cosX=false&sinX=false&cosY=false&sinY=false&collectStats=false&problem=classification&initZero=false&hideText=false)
 
 
 #### 1.什么是多层感知机（MLP）？其结构是怎样的？  
@@ -116,6 +116,7 @@
   
   
 #### 13.什么是欠拟合？什么是过拟合？
+
 - 欠拟合：模型过于简单，无法捕捉数据中的有效模式，在训练集和测试集上的性能都很差
   
 - 过拟合：模型过于复杂，过度学习了训练数据中的噪声和个别样本的特点，导致在训练集上性能很好，但在测试集上泛化性能差

@@ -49,12 +49,27 @@
 
 #### 6.怎么用矩阵乘法表示神经网络的全连接层前向传播过程？
 
-![alt text](8da4c00698d028f58a06dbcd5dd970dd_720.jpg)  
+- 假设全连接层的输入为向量  $\boldsymbol{x} \in \mathbb{R}^{n}$（其中  n  是输入特征的数量），权重矩阵为$\boldsymbol{W} \in \mathbb{R}^{m \times n}$（其中  m  是该层输出神经元的数量），偏置向量为  $\boldsymbol{b} \in \mathbb{R}^{m}$ 
+ 
+  全连接层的前向传播过程可以表示为：
+
+  $\boldsymbol{z} = \boldsymbol{W}\boldsymbol{x} + \boldsymbol{b}$
+
+  其中， $\boldsymbol{z}$ 是经过线性变换后的输出向量。之后， $\boldsymbol{z}$  通常会再经过激活函数（如 ReLU、Sigmoid 等），得到该层最终的输出。
+ 
+  如果是批量数据（即同时处理多个样本），输入为矩阵  $\boldsymbol{X} \in \mathbb{R}^{b \times n}$（其中  b  是批量大小），那么前向传播过程为：
+
+  $\boldsymbol{Z} = \boldsymbol{W}\boldsymbol{X} + \boldsymbol{b}$
+
+ 这里，偏置  $\boldsymbol{b}$  会通过广播机制与矩阵乘法的结果相加
+
 *广播：使两个维度的大小相等；其中一个维度的大小为1（可以被“拉伸”到与另一个维度匹配）*|
 
 ![alt text](549a867cc79aa9c805c59ed89be7431e.jpg)
 
+
 ![alt text](1145b32e7e96ae074cbdb8ef71cb493c.jpg)
+
 
 ---
 

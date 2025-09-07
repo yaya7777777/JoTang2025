@@ -86,7 +86,7 @@ ok可以看到我是连接好了补的截图（bushi）
 
 只要**亦步亦趋**就会成功的！
 
-#### 我的参考文献：https://www.bilibili.com/video/BV1RF11YzEV9/?spm_id_from=333.337.search-card.all.click&vd_source=1cf9ae4d63ff94aa45638c152e755eab
+#### 我的参考文献：[SSH远程连接详细步骤](https://www.bilibili.com/video/BV1RF11YzEV9/?spm_id_from=333.337.search-card.all.click&vd_source=1cf9ae4d63ff94aa45638c152e755eab)
 
 然后我就没截上图了，，，，
 
