@@ -73,19 +73,27 @@
 - 解释型语言虽然不像编译型语言那样生成可直接运行的机器码，但为了高效执行代码，也会进行一些代码转换、优化的操作，这些操作和编译型语言编译过程中的部分环节类似 
 ---
 ### 3.github上的任务
+
 好的我们打开了这个GitHub库，通过download zip我们成功下载了这个task
+
 ![alt text](20d119c5f638373620543c2b6318c6f9.png)
+
 跟随我们自己的笔记，在终端分别输入预处理、编译、汇编、链接的指令，可以看到分别生成了.i、.s、.o、.exe的文件
+
 ![alt text](60b4919869c3a208910832f319ce884d-1.png)
 *请忽略我输错了n次指令的愚蠢*
 ![alt text](1394db05c2fa4ccab1c64b63d5fe2e6a.png)
 ![alt text](42513103e353d09c6c58e58dadfeb02e.png)
 ![alt text](875ace650ed8de1e5fee0a12e5fed45d.png)
 *ok也是一个都看不懂了*
+
 接下来我们创建makefile吧！浅阅读了一下学长/学姐写的代码，好的暂时还是不为难自己了
 在进行艰难的观看视频后，我写了一坨不知道什么东西，发现根本运行不了哈哈（苦涩）
+
 **亦步亦趋**失效了
+
 只好转战ai了，ai帮我修改的结果：
+
 ![alt text](666b2fbc09f8059911eeefd35f897b8b.png)
 
 这你不得不佩服ai，一下子就可以成功make了，ai救我狗命
@@ -99,23 +107,32 @@
 好的开始建立cmakelist了
 
 我直接打开联想的应用商城，下了一个cmake
+
 ![alt text](2de27c66e2806d8feb4e43a46da0ebfa.png)
+
 很easy
 然后配置环境变量
 
 ![alt text](b4ff117c466e4ce413091ce908375a2d.png)
+
 还是很easy
 确定一下cmake的存在
 
 ![alt text](54972815552c8020f99cc914f26800a6.png)
 
 开始游历b站
+
+
 ##### 我的参考文献：https://www.bilibili.com/video/BV1vR4y1u77h?spm_id_from=333.788.player.switch&vd_source=1cf9ae4d63ff94aa45638c152e755eab&p=2
 
+
 你就学吧，一学一个不吱声，学的想疯，学的想死，我还是觉得makefile简单一点，学cmake感觉跟再学一门编程语言没区别了wwwww
+
 （感谢ai的倾情帮助）
+
 ![alt text](35506e2e3e4f8d92e4006b821e0563cf.png)
 *咱也不知道为什么报错，但是能运行*
+
 
 也是建好库了，但我还是有点搞不清楚动态库和静态库
 云里雾里
@@ -127,4 +144,4 @@ cmakelist属于CTRL C + CTRL V的功劳
 
 
 ==好了好了终于结束了==
-==我现在好痛苦，但是一次性关掉十几个页面的时候又好爽，感觉自己是m==
+==好痛苦，但是一次性关掉十几个页面的时候又好爽，感觉自己是m==

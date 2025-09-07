@@ -1,0 +1,32 @@
+{
+    "markdown.preview.breaks": true,
+    "markdown.preview.imageLoadConcurrency": 5,
+    "markdown.preview.images.maxWidth": "100%",
+    "markdown.preview.openMarkdownLinks": "inPreview",
+    "markdown.preview.scrollEditorWithPreview": true,
+    "markdown.preview.scrollPreviewWithEditor": true,
+    "markdown.preview.typographer": true,
+    "markdown.styles": [],
+    "editor.renderControlCharacters": false,
+    "editor.renderWhitespace": "selection",
+    "workbench.editorAssociations": {
+        "*.md": "vscode.markdown.preview.editor"
+    },
+    "markdown.preview.linkify": true,
+    "markdown.preview.autoRefresh": true,
+    "markdown.preview.images.rootPath": "${workspaceFolder}",
+    "markdown.preview.fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif",
+    "markdown.preview.fontSize": 14,
+    "markdown.preview.lineHeight": 1.6,
+    "markdown.preview.doubleClickToSwitchEditor": true,
+    "markdown.preview.initialLine": 0,
+    "markdown.preview.scrollBeyondLastLine": false,
+    "markdown.preview.theme": "auto",
+    "markdown.preview.useEditorStyle": true,
+    "markdown.preview.usePagedLayout": false,
+    "markdown.preview.enableExperimentalReuseTextDocument": false,
+    "markdown.preview.filteredExtensions": [],
+    "files.associations": {
+        "*.md": "markdown"
+    }
+}
