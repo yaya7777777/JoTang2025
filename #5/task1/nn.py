@@ -29,10 +29,10 @@ class NN(nn.Module):
 
 # 定义计算环境
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"使用设备: {device}")
+
 
 # 划分和加载数据集
-data_path = 'moons.csv'
+data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'moons.csv')
 dataset = MoonsDataset(data_path)
 
 train_size = int(0.7 * len(dataset))
@@ -45,7 +45,7 @@ train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=14, shuffle
 val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=1, shuffle=False)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=False)
 
-print(f"训练集大小: {len(train_dataset)}, 验证集大小: {len(val_dataset)}, 测试集大小: {len(test_dataset)}")
+
 
 
 
@@ -65,8 +65,8 @@ def evaluate(model, data_loader, device):
     return accuracy
 
 # 训练函数
-def train_model(model, train_loader, val_loader, optimizer, criterion, device, epochs=100, save_path=None):
-   
+def train_model(model, train_loader, val_loader, device, learning_rate=0.001, epochs=100, save_path=None):
+
     # 初始化训练历史记录
     history = {
         'train_accuracy': [],
@@ -80,9 +80,12 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, device, e
         if not os.path.exists(weight_path):
             os.makedirs(weight_path)
     
+    model.train()
+    pg=[p for p in model.parameters() if p.requires_grad]
+    optimizer = torch.optim.Adam(pg, lr=learning_rate)  # Adam优化器
+    criterion = nn.CrossEntropyLoss()  # 交叉熵损失函数
     # 训练过程
     for epoch in range(epochs):
-        model.train()
         cor_num = torch.zeros(1).to(device)
         sample_num = torch.zeros(1).to(device)
         epoch_loss = 0.0
@@ -105,7 +108,7 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, device, e
             loss.backward()
             optimizer.step()
             
-        # 计算本轮训练准确率
+        # 计算训练准确率
         train_accuracy = cor_num.item() / sample_num.item()
         history['train_accuracy'].append(train_accuracy)
         
@@ -123,11 +126,8 @@ def train_model(model, train_loader, val_loader, optimizer, criterion, device, e
     
     # 保存模型权重
     if save_path is not None:
-        try:
-            torch.save(model.state_dict(), os.path.join(weight_path, 'nn.pth'))
-            print(f"模型权重已保存至 {os.path.join(weight_path, 'nn.pth')}")
-        except Exception as e:
-            print(f"保存模型权重时出错: {e}")
+        torch.save(model.state_dict(), os.path.join(weight_path, 'nn.pth'))
+            
     
     print("Training complete.")
     return model, history, losses
@@ -214,13 +214,14 @@ def main():
             optimizer=optimizer,
             criterion=criterion,
             device=device,
+            learning_rate=0.005,
             epochs=100,
             save_path=os.getcwd()
         )
         
         # 测试模型
         test_accuracy = evaluate(model, test_loader, device)
-        print(f"最终测试准确率: {test_accuracy:.4f}")
+      
         
         # 可视化数据集
         all_data = dataset.data.numpy()
