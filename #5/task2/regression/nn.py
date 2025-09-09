@@ -1,9 +1,9 @@
-import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
+import os
 
 from housing_loader import HousingDataset
 import torch.nn as nn
@@ -13,26 +13,16 @@ import sys
 import matplotlib.pyplot as plt
 
 
-class NN(nn.Module):
-    # 三层神经网络
-    def __init__(self, in_size, hidden_size1, hidden_size2, out_size):
-        super(NN, self).__init__()
-        self.layer1 = nn.Linear(in_size, hidden_size1)
-        self.relu1 = nn.ReLU()
-        self.layer2 = nn.Linear(hidden_size1, hidden_size2)
-        self.relu2 = nn.ReLU()
-        self.layer3 = nn.Linear(hidden_size2, out_size)
+class LinearRegression(nn.Module):
+    # 线性回归模型
+    def __init__(self, in_size, out_size):
+        super(LinearRegression, self).__init__()
+        self.linear = nn.Linear(in_size, out_size)
         
-
     def forward(self, x):
-        x = self.layer1(x)
-        x = self.relu1(x)
-        x = self.layer2(x)
-        x = self.relu2(x)
-        x = self.layer3(x)
-        return x
+        return self.linear(x)
     
-    
+
 # 定义计算环境
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -49,10 +39,13 @@ train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle
 val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=12, shuffle=True)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=12, shuffle=True)
 
-# 定义推理函数，计算并返回均方误差
+# 定义推理函数，计算并返回均方误差和决定系数
 def evaluate(model, data_loader, device):
     model.eval()
     total_loss = 0.0
+    all_targets = []
+    all_predictions = []
+    
     criterion = nn.MSELoss()#均方误差损失函数
     with torch.no_grad():
         for features, targets in data_loader:
@@ -60,8 +53,20 @@ def evaluate(model, data_loader, device):
             outputs = model(features)
             loss = criterion(outputs, targets)
             total_loss += loss.item() * features.size(0)
+            
+            # 在循环内部收集targets和outputs
+            all_targets.extend(targets.cpu().numpy().tolist())
+            all_predictions.extend(outputs.cpu().numpy().tolist())
+    
+    # 计算决定系数 R²
+    all_targets = np.array(all_targets)
+    all_predictions = np.array(all_predictions)
+    ss_tot = np.sum((all_targets - np.mean(all_targets)) ** 2)
+    ss_res = np.sum((all_targets - all_predictions) ** 2)
+    r2 = 1 - (ss_res / ss_tot)
+    
     losses = total_loss / len(data_loader.dataset)
-    return losses
+    return losses, r2, all_targets, all_predictions
 
 # 定义训练函数
 def train_model(model, train_loader, val_loader, device, epochs=100, learning_rate=0.001, save_path=None):
@@ -78,6 +83,7 @@ def train_model(model, train_loader, val_loader, device, epochs=100, learning_ra
     criterion = nn.MSELoss()
     train_losses = []
     val_losses = []
+    val_r2_scores = []
     for epoch in range(epochs):
         epoch_loss = 0.0
         
@@ -97,34 +103,51 @@ def train_model(model, train_loader, val_loader, device, epochs=100, learning_ra
             
             
         train_loss = epoch_loss / len(train_loader.dataset)
-        val_loss = evaluate(model, val_loader, device)
+        val_loss, val_r2, _, _ = evaluate(model, val_loader, device)
         train_losses.append(train_loss)
         val_losses.append(val_loss)
+        val_r2_scores.append(val_r2)
         
-        train_bar.desc = f"Train Epoch [{epoch+1}/{epochs}] Loss: {train_loss:.4f} Val Loss: {val_loss:.4f}"
-        print(f"Train Epoch [{epoch+1}/{epochs}] Training Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f}")
+        train_bar.desc = f"Train Epoch [{epoch+1}/{epochs}] Loss: {train_loss:.4f} Val Loss: {val_loss:.4f} Val R²: {val_r2:.4f}"
+        print(f"Train Epoch [{epoch+1}/{epochs}] Training Loss: {train_loss:.4f} Validation Loss: {val_loss:.4f} Validation R²: {val_r2:.4f}")
         
         # 保存模型权重
         if save_path is not None:
             torch.save(model.state_dict(), os.path.join(weight_path, f'epoch_{epoch+1}.pth'))
 
-
-   # 测试模型
-    test_loss = evaluate(model, test_loader, device)
-    print(f"Test Loss: {test_loss:.4f}")
+    # 测试模型（修正缩进，确保在for循环外）
+    test_loss, test_r2, all_targets, all_predictions = evaluate(model, test_loader, device)
+    print(f"Test Loss: {test_loss:.4f} Test R²: {test_r2:.4f}")
     
     print("Training complete.")
     
-    return model, train_losses, val_losses, test_loss
+    return model, train_losses, val_losses, val_r2_scores, test_loss, test_r2, all_targets, all_predictions
 
 #可视化训练过程
-def visualize_training(train_losses):
-    plt.figure(figsize=(10, 5))
+def visualize_training(train_losses, val_losses=None, val_r2_scores=None):
+    plt.figure(figsize=(15, 5))
+    
+    # 绘制损失曲线
+    plt.subplot(1, 2, 1)
     plt.plot(train_losses, label='Training Loss')
+    if val_losses:
+        plt.plot(val_losses, label='Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.title('Training Loss')
+    plt.title('Training and Validation Loss')
     plt.legend()
+    
+    # 绘制R²曲线
+    if val_r2_scores:
+        plt.subplot(1, 2, 2)
+        plt.plot(val_r2_scores, label='Validation R²')
+        plt.xlabel('Epoch')
+        plt.ylabel('R² Score')
+        plt.title('Validation R² Score')
+        plt.ylim(-1, 1)  # R²的取值范围通常在[-∞, 1]
+        plt.legend()
+    
+    plt.tight_layout()
     plt.show()
     
     
@@ -154,18 +177,35 @@ def visualize_predictions(model, data, targets, device):
     plt.legend()
     plt.show()
     
+# 绘制真实房价vs预测房价的散点图
+def visualize_true_vs_predicted(all_targets, all_predictions, r2_score):
+    plt.figure(figsize=(10, 10))
+    plt.scatter(all_targets, all_predictions, alpha=0.5)
+    
+    # 理想的预测线（取min和max确保覆盖范围）
+    min_val = min(min(all_targets), min(all_predictions))
+    max_val = max(max(all_targets), max(all_predictions))
+    plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='理想预测')
+    
+    plt.xlabel('True Price')
+    plt.ylabel('Predicted Price')
+    plt.title(f'True Price vs Predicted Price (R² = {r2_score:.4f})')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+    
 
 def main():
 
     input_size = dataset.features.shape[1]  # 输入特征数量
     
     
-    model = NN(in_size=input_size, hidden_size1=64, hidden_size2=28, out_size=1).to(device)
+    model = LinearRegression(in_size=input_size, out_size=1).to(device)
     epochs = 100
     learning_rate = 0.001
     save_path = os.path.dirname(os.path.abspath(__file__))
     
-    model, train_losses, val_losses, test_loss = train_model(
+    model, train_losses, val_losses, val_r2_scores, test_loss, test_r2, all_targets, all_predictions = train_model(
         model=model, 
         train_loader=train_loader, 
         val_loader=val_loader, 
@@ -175,11 +215,17 @@ def main():
         save_path=save_path
     )
     
-    visualize_training(train_losses)
+    # 可视化训练过程和R²曲线
+    visualize_training(train_losses, val_losses, val_r2_scores)
     
+    # 可视化数据集
     visualize_data(dataset.features.numpy(), dataset.targets.numpy(), title='Housing Price Dataset')
     
+    # 可视化预测结果
     visualize_predictions(model, dataset.features.numpy(), dataset.targets.numpy(), device)
+    
+    # 绘制真实房价vs预测房价的散点图
+    visualize_true_vs_predicted(all_targets, all_predictions, test_r2)
 
 if __name__ == "__main__":
     main()

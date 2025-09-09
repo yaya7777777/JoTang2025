@@ -145,7 +145,7 @@ def visualize_data(data, labels, title="Dataset"):
         plt.tight_layout()
         plt.show()
     
-    # 可视化训练损失和准确率
+# 可视化训练损失和准确率
 def visualize_training(history, losses):
         epochs = len(history['train_accuracy'])
         plt.figure(figsize=(12, 5))
@@ -167,7 +167,7 @@ def visualize_training(history, losses):
         plt.tight_layout()
         plt.show()
     
-    # 可视化决策边界（热力图）
+# 可视化决策边界（热力图）
 def visualize_decision_boundary(model, data, labels, device):
         # 确定绘图范围
         x_min, x_max = data[:, 0].min() - 1, data[:, 0].max() + 1
@@ -195,7 +195,7 @@ def visualize_decision_boundary(model, data, labels, device):
         plt.colorbar()
         plt.show()
 
-# 主函数
+
 def main():
 
         # 创建模型
@@ -211,8 +211,6 @@ def main():
             model=model,
             train_loader=train_loader,
             val_loader=val_loader,
-            optimizer=optimizer,
-            criterion=criterion,
             device=device,
             learning_rate=0.005,
             epochs=100,

@@ -10,51 +10,22 @@ class MoonsDataset(Dataset):
     def __init__(self, data_path, n_samples=1000, noise=0.2, random_state=42):
         self.data_path = data_path
 
-        # 自动生成数据集
-        if not os.path.exists(self.data_path):
-           self._generate_dataset(n_samples, noise, random_state)
-        else:
-            # 从CSV文件加载数据
-            df = pd.read_csv(self.data_path)
-            data = df[['feature1', 'feature2']].values
-            labels = df['label'].values
-            
-            # 标准化数据
-            data = (data - np.mean(data, axis=0)) / np.std(data, axis=0)#z值化
-            
-            # 保存到实例变量
-            self.data = torch.tensor(data, dtype=torch.float32)
-            self.labels = torch.tensor(labels, dtype=torch.long)
-            
-        
-            
-            
     
-    def _generate_dataset(self, n_samples, noise, random_state):
-        # 生成数据集
-        x, y = make_moons(n_samples=n_samples, noise=noise, random_state=random_state)
-
-        # 创建DataFrame
-        df = pd.DataFrame({
-            'feature1': x[:, 0],
-            'feature2': x[:, 1],
-            'label': y
-        })
-        
-        # 保存到CSV文件
-        df.to_csv(self.data_path, index=False) # 保存数据集,不保存索引
-        
-      
-        
-        # 加载生成的数据
+        # 从CSV文件加载数据
+        df = pd.read_csv(self.data_path)
         data = df[['feature1', 'feature2']].values
         labels = df['label'].values
-        
-   
             
-    
-    
-    # 数据集大小
+        # 标准化数据
+        data = (data - np.mean(data, axis=0)) / np.std(data, axis=0)#z值化
+            
+        # 保存到实例变量
+        self.data = torch.tensor(data, dtype=torch.float32)
+        self.labels = torch.tensor(labels, dtype=torch.long)
+            
+        
+            
+            # 数据集大小
     def __len__(self):
         return len(self.labels)
     
