@@ -46,6 +46,7 @@ def evaluate(model, data_loader, device):
     all_targets = []
     all_predictions = []
     
+    
     criterion = nn.MSELoss()#均方误差损失函数
     with torch.no_grad():
         for features, targets in data_loader:
@@ -54,7 +55,7 @@ def evaluate(model, data_loader, device):
             loss = criterion(outputs, targets)
             total_loss += loss.item() * features.size(0)
             
-            # 在循环内部收集targets和outputs
+            # 将数据收集移到循环内部
             all_targets.extend(targets.cpu().numpy().tolist())
             all_predictions.extend(outputs.cpu().numpy().tolist())
     
@@ -69,8 +70,8 @@ def evaluate(model, data_loader, device):
     return losses, r2, all_targets, all_predictions
 
 # 定义训练函数
-def train_model(model, train_loader, val_loader, device, epochs=100, learning_rate=0.001, save_path=None):
-
+def train_model(model, train_loader, val_loader, test_loader, device, epochs=200, learning_rate=0.001, save_path=None):
+    
     # 确保保存路径存在
     if save_path is not None:
         weight_path = os.path.join(save_path, 'weights')
@@ -79,7 +80,7 @@ def train_model(model, train_loader, val_loader, device, epochs=100, learning_ra
 
     model.train()
     pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.Adam(pg, lr=learning_rate)  # Adam优化器,更新所有参数
+    optimizer = torch.optim.SGD(pg, lr=learning_rate)  # sgd优化器,更新所有参数
     criterion = nn.MSELoss()
     train_losses = []
     val_losses = []
@@ -101,7 +102,7 @@ def train_model(model, train_loader, val_loader, device, epochs=100, learning_ra
             loss.backward()
             optimizer.step()
             
-            
+        
         train_loss = epoch_loss / len(train_loader.dataset)
         val_loss, val_r2, _, _ = evaluate(model, val_loader, device)
         train_losses.append(train_loss)
@@ -115,7 +116,7 @@ def train_model(model, train_loader, val_loader, device, epochs=100, learning_ra
         if save_path is not None:
             torch.save(model.state_dict(), os.path.join(weight_path, f'epoch_{epoch+1}.pth'))
 
-    # 测试模型（修正缩进，确保在for循环外）
+    
     test_loss, test_r2, all_targets, all_predictions = evaluate(model, test_loader, device)
     print(f"Test Loss: {test_loss:.4f} Test R²: {test_r2:.4f}")
     
@@ -152,7 +153,7 @@ def visualize_training(train_losses, val_losses=None, val_r2_scores=None):
     
     
 # 可视化数据集
-def visualize_data(features, targets, title="Dataset"):
+def visualize_data(targets, title="Dataset"):
     plt.figure(figsize=(10, 5))
     plt.scatter(range(len(targets)), targets, c='blue', label='Targets')
     plt.xlabel('Sample Index')
@@ -209,17 +210,19 @@ def main():
         model=model, 
         train_loader=train_loader, 
         val_loader=val_loader, 
+        test_loader=test_loader,
         device=device,
         epochs=epochs,
         learning_rate=learning_rate,
-        save_path=save_path
+        save_path=save_path,
+        
     )
     
     # 可视化训练过程和R²曲线
     visualize_training(train_losses, val_losses, val_r2_scores)
     
     # 可视化数据集
-    visualize_data(dataset.features.numpy(), dataset.targets.numpy(), title='Housing Price Dataset')
+    visualize_data(dataset.targets.numpy(), title='Housing Price Dataset')
     
     # 可视化预测结果
     visualize_predictions(model, dataset.features.numpy(), dataset.targets.numpy(), device)
@@ -228,6 +231,7 @@ def main():
     visualize_true_vs_predicted(all_targets, all_predictions, test_r2)
 
 if __name__ == "__main__":
+    
     main()
         
     

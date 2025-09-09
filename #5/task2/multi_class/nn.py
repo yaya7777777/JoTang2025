@@ -1,6 +1,8 @@
+from sched import scheduler
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import numpy as np
+from sklearn.utils import multiclass
 import torch
 from torch.utils.data import Dataset, DataLoader
 import os
@@ -11,18 +13,26 @@ import torch.optim as optim
 from tqdm import tqdm
 import sys
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 
 class LogisticRegression(nn.Module):
     # 逻辑回归模型（多分类）
     def __init__(self, in_size, out_size):
         super(LogisticRegression, self).__init__()
-        self.linear = nn.Linear(in_size, out_size)
-        # 在多分类任务中，通常在损失函数中使用CrossEntropyLoss，它内部会应用softmax
+        
+        self.layer1 = nn.Linear(in_size, 64)
+        self.layer2 = nn.Linear(64, 32)
+        self.layer3 = nn.Linear(32, out_size)
+        self.relu = nn.ReLU()
         
     def forward(self, x):
-        return self.linear(x)
-    
+        x = self.relu(self.layer1(x))
+        x = self.relu(self.layer2(x))
+        x = self.layer3(x)
+        return x
+
 
 # 定义计算环境
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -48,27 +58,45 @@ def evaluate(model, data_loader, device):
     model.eval()
     cor_num = 0
     total = 0
+    all_labels = []
+    all_predictions = []
+    
     with torch.no_grad():
         for data, labels in data_loader:
             data, labels = data.to(device), labels.to(device)
+            
+            # 处理标签维度
+            if labels.dim() != 1:
+                labels = labels.flatten()
+            
             outputs = model(data)
             predicted = torch.max(outputs.data, dim=1)[1]
-            total += labels.size(0)
+            
+            # 更新计数
+            batch_size = labels.size(0)
+            total += batch_size
+            
+        
             cor_num += (predicted == labels).sum().item()
+            
+            # 真实标签和预测标签
+            all_labels.extend(labels.cpu().numpy())
+            all_predictions.extend(predicted.cpu().numpy())
+        
+    
     accuracy = cor_num / total
-    return accuracy
+    return accuracy, all_labels, all_predictions
 
 # 训练函数
-def train_model(model, train_loader, val_loader, device, learning_rate=0.001, epochs=100, save_path=None):
-
+def train_model(model, train_loader, val_loader, device, learning_rate=0.001, epochs=200, save_path=None):
     # 初始化训练历史记录
     history = {
         'train_accuracy': [],
         'val_accuracy': []
     }
-    losses = []  # 保存每轮的损失值
+    losses = []
     
-    # 确保保存路径存在
+    # 创建保存权重的文件夹
     if save_path is not None:
         weight_path = os.path.join(save_path, 'weights')
         if not os.path.exists(weight_path):
@@ -76,8 +104,12 @@ def train_model(model, train_loader, val_loader, device, learning_rate=0.001, ep
     
     model.train()
     pg=[p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(pg, lr=learning_rate)  # Adam优化器
+    
+    #使用Adam优化器
+    optimizer = torch.optim.Adam(pg, lr=learning_rate)
     criterion = nn.CrossEntropyLoss()  # 交叉熵损失函数
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=5, factor=0.5)
+    
     for epoch in range(epochs):
         cor_num = torch.zeros(1).to(device)
         sample_num = torch.zeros(1).to(device)
@@ -100,7 +132,7 @@ def train_model(model, train_loader, val_loader, device, learning_rate=0.001, ep
             epoch_loss += loss.item()
             loss.backward()
             optimizer.step()
-            
+        
         # 计算训练准确率
         train_accuracy = cor_num.item() / sample_num.item()
         history['train_accuracy'].append(train_accuracy)
@@ -110,7 +142,8 @@ def train_model(model, train_loader, val_loader, device, learning_rate=0.001, ep
         losses.append(avg_epoch_loss)
         
         # 计算验证准确率
-        val_accuracy = evaluate(model, val_loader, device)
+        # 只获取evaluate函数的第一个返回值（准确率）
+        val_accuracy, _, _ = evaluate(model, val_loader, device)
         history['val_accuracy'].append(val_accuracy)
         
         # 更新进度条描述
@@ -120,8 +153,7 @@ def train_model(model, train_loader, val_loader, device, learning_rate=0.001, ep
     # 保存模型权重
     if save_path is not None:
         torch.save(model.state_dict(), os.path.join(weight_path, 'logistic_regression.pth'))
-            
-    
+        
     print("Training complete.")
     return model, history, losses
 
@@ -201,6 +233,44 @@ def visualize_decision_boundary(model, data, labels, device):
     plt.colorbar()
     plt.show()
 
+# 增加混淆矩阵可视化函数
+def visualize_confusion_matrix(true_labels, predicted_labels, class_names=None):
+    """可视化混淆矩阵，用于评估分类模型的性能
+    
+    参数:
+    - true_labels: 真实标签列表
+    - predicted_labels: 模型预测的标签列表
+    - class_names: 类别名称列表，如果为None则使用数字索引
+    """
+    # 步骤1: 使用sklearn的confusion_matrix函数生成混淆矩阵
+    # 混淆矩阵展示了真实标签与预测标签之间的对应关系
+    # 对角线元素表示预测正确的样本数量，非对角线元素表示预测错误的样本数量
+    cm = confusion_matrix(true_labels, predicted_labels)
+    
+    # 步骤2: 设置类别名称
+    # 如果未提供类别名称，则根据真实标签中的唯一值数量生成数字索引
+    if class_names is None:
+        class_names = [str(i) for i in range(len(np.unique(true_labels)))]
+    
+    # 步骤3: 创建一个新的图形窗口，设置图形大小为10x8英寸
+    plt.figure(figsize=(10, 8))
+    
+    # 步骤4: 使用seaborn的heatmap函数绘制热力图形式的混淆矩阵
+    # - annot=True: 在热力图中显示具体数值
+    # - fmt='d': 使用整数格式显示数值
+    # - cmap='Blues': 使用蓝色系的颜色映射
+    # - xticklabels, yticklabels: 设置坐标轴的标签为类别名称
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                xticklabels=class_names, yticklabels=class_names)
+    
+    # 步骤5: 添加坐标轴标签和图表标题
+    plt.xlabel('Predicted Labels')  # x轴表示模型预测的标签
+    plt.ylabel('True Labels')       # y轴表示真实的标签
+    plt.title('Confusion Matrix')   # 图表标题
+    
+    # 步骤6: 显示混淆矩阵图形
+    plt.show()
+
 # 主函数
 def main():
     # 确保数据集已经加载完成
@@ -210,9 +280,9 @@ def main():
     # 创建逻辑回归模型
     model = LogisticRegression(in_size=input_size, out_size=output_size).to(device)
     
-    # 设置训练参数
-    learning_rate = 0.001
-    epochs = 100
+    # 改进7：调整训练参数
+    learning_rate = 0.001  # 对于Adam，通常可以使用这个学习率
+    epochs = 200  # 增加训练轮数
     save_path = os.path.dirname(os.path.abspath(__file__))
     
     # 训练模型
@@ -226,8 +296,8 @@ def main():
         save_path=save_path
     )
     
-    # 在测试集上评估模型
-    test_accuracy = evaluate(model, test_loader, device)
+    # 测试模型，获取准确率、真实标签和预测标签
+    test_accuracy, true_labels, predicted_labels = evaluate(model, test_loader, device)
     print(f"Test Accuracy: {test_accuracy:.4f}")
     
     # 可视化训练过程
@@ -238,6 +308,10 @@ def main():
     
     # 可视化决策边界
     visualize_decision_boundary(model, dataset.features.numpy(), dataset.labels.numpy(), device)
+    
+    # 可视化混淆矩阵
+    iris_class_names = ['Setosa', 'Versicolor', 'Virginica']
+    visualize_confusion_matrix(true_labels, predicted_labels, class_names=iris_class_names)
 
 if __name__ == "__main__":
     main()

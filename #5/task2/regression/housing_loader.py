@@ -11,7 +11,6 @@ class HousingDataset(Dataset):
 
         # 检查CSV文件是否存在，如果不存在则下载数据
         if not os.path.exists(self.data_path):
-            print(f"文件 {self.data_path} 不存在，正在下载加州房价数据...")
             california_housing = fetch_california_housing()
             
             # 创建DataFrame
@@ -23,7 +22,7 @@ class HousingDataset(Dataset):
             
             # 保存到CSV文件
             df.to_csv(self.data_path, index=False)
-            print(f"数据已保存到 {self.data_path}")
+           
         
         # 从CSV文件加载数据
         df = pd.read_csv(self.data_path)
