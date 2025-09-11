@@ -1,0 +1,13 @@
+{
+    "python.analysis.extraPaths": [".", "d:\\JoTang2025\\#5"],
+    "python.autoComplete.extraPaths": [".", "d:\\JoTang2025\\#5"],
+    "python.defaultInterpreterPath": "D:\\Users\\Administrator\\miniconda3\\python.exe",
+    "python.analysis.typeCheckingMode": "off",
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingImports": "none",
+        "reportUndefinedVariable": "none"
+    },
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false
+}

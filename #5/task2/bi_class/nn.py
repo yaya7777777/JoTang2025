@@ -138,22 +138,41 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         val_total = 0
         
         
+        # 验证集评估
+        model.eval()
+        val_running_loss = 0.0
+        val_correct = 0
+        val_total = 0
+        
         with torch.no_grad():
             for batch in val_loader:
                 # 处理不同类型的数据集格式
                 if isinstance(batch, dict):
                     features = batch['features'].to(device)
                     labels = batch['labels'].to(device)
-    
+                else:
+                    features, labels = batch
+                    features, labels = features.to(device), labels.to(device)
                 
                 outputs = model(features)
                 loss = criterion(outputs, labels)
-                
                 val_running_loss += loss.item()
-                _, predicted = torch.max(outputs.data, 1)
                 
+                _, predicted = torch.max(outputs.data, 1)
                 val_total += labels.size(0)
                 val_correct += (predicted == labels).sum().item()
+        
+            
+        optimizer.zero_grad()
+        outputs = model(features)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+            
+        running_loss += loss.item()
+        _, predicted = torch.max(outputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
         
         # 计算本epoch的验证损失和准确率
         epoch_val_loss = val_running_loss / len(val_loader)
@@ -332,8 +351,10 @@ def main():
     # 可视化训练结果
     visualize_training(train_losses, val_losses, train_accs, val_accs)
     
-    # 保存模型
-    torch.save(model.state_dict(), 'titanic_model.pth')
+    # 保存模型到bi_class目录下
+    model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'titanic_model.pth')
+    torch.save(model.state_dict(), model_path)
+    print(f"模型已保存到 {model_path}")
     
     
 
