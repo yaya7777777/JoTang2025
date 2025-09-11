@@ -7,22 +7,25 @@ from tqdm import tqdm
 import torch.optim as optim
 
 from moons_loader import MoonsDataset
+ 
 
-class NN(nn.Module):
+class MoonsMLP(nn.Module):
     # 三层神经网络
-    def __init__(self, in_size, hidden_size1, hidden_size2, out_size):
-        super(NN, self).__init__()
-        self.layer1 = nn.Linear(in_size, hidden_size1)
-        self.relu = nn.ReLU()
-        self.layer2 = nn.Linear(hidden_size1, hidden_size2)
-        self.layer3 = nn.Linear(hidden_size2, out_size)
+    def __init__(self, in_size):
+        super(MoonsMLP, self).__init__()
+        self.layer1 = nn.Linear(in_size, 16)
+        self.relu1 = nn.ReLU()
+        self.layer2 = nn.Linear(16, 8)
+        self.relu2 = nn.Relu()
+        self.layer3 = nn.Linear(8, 2)
         
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         x = self.layer1(x)
-        x = self.relu(x)
+        x = self.relu1(x)
         x = self.layer2(x)
+        x = self.relu2(x)
         x = self.layer3(x)
         x = self.softmax(x)
         return x
@@ -199,12 +202,9 @@ def visualize_decision_boundary(model, data, labels, device):
 def main():
 
         # 创建模型
-        model = NN(in_size=2, hidden_size1=12, hidden_size2=8, out_size=2).to(device)
+        model = MoonsMLP(in_size=2).to(device)
         
-        # 定义损失函数和优化器
-        criterion = nn.CrossEntropyLoss()
-        pg = [p for p in model.parameters() if p.requires_grad]
-        optimizer = optim.Adam(pg, lr=0.005)
+ 
         
         # 调用训练函数
         model, history, losses = train_model(
@@ -219,6 +219,8 @@ def main():
         
         # 测试模型
         test_accuracy = evaluate(model, test_loader, device)
+        print(f"Test Accuracy: {test_accuracy:.4f}")
+      
       
         
         # 可视化数据集

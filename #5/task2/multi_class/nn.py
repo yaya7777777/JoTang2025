@@ -13,18 +13,21 @@ import torch.optim as optim
 from tqdm import tqdm
 import sys
 import matplotlib.pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
+from sklearn.decomposition import PCA
 from sklearn.metrics import confusion_matrix
 import seaborn as sns
 
 
-class LogisticRegression(nn.Module):
+class IrisRegression(nn.Module):
     # 逻辑回归模型（多分类）
-    def __init__(self, in_size, out_size):
-        super(LogisticRegression, self).__init__()
+    def __init__(self, in_size):
+        super(IrisRegression, self).__init__()
         
         self.layer1 = nn.Linear(in_size, 64)
         self.layer2 = nn.Linear(64, 32)
-        self.layer3 = nn.Linear(32, out_size)
+        self.layer3 = nn.Linear(32, 3)
         self.relu = nn.ReLU()
         
     def forward(self, x):
@@ -56,8 +59,8 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=1, shuffle=Fa
 # 定义推理函数，计算并返回准确率
 def evaluate(model, data_loader, device):
     model.eval()
-    cor_num = 0
-    total = 0
+    total_correct = 0
+    total_samples = 0
     all_labels = []
     all_predictions = []
     
@@ -69,22 +72,23 @@ def evaluate(model, data_loader, device):
             if labels.dim() != 1:
                 labels = labels.flatten()
             
+            # 前向传播，获取模型输出
             outputs = model(data)
-            predicted = torch.max(outputs.data, dim=1)[1]
+            # 应用softmax获取概率
+            probabilities = torch.softmax(outputs, dim=1)
+            # 获取预测类别
+            _, predicted = torch.max(probabilities, 1)
             
             # 更新计数
             batch_size = labels.size(0)
-            total += batch_size
+            total_samples += batch_size
+            total_correct += (predicted == labels).sum().item()
             
-        
-            cor_num += (predicted == labels).sum().item()
-            
-            # 真实标签和预测标签
+            # 收集真实标签和预测标签
             all_labels.extend(labels.cpu().numpy())
             all_predictions.extend(predicted.cpu().numpy())
         
-    
-    accuracy = cor_num / total
+    accuracy = total_correct / total_samples
     return accuracy, all_labels, all_predictions
 
 # 训练函数
@@ -146,6 +150,9 @@ def train_model(model, train_loader, val_loader, device, learning_rate=0.001, ep
         val_accuracy, _, _ = evaluate(model, val_loader, device)
         history['val_accuracy'].append(val_accuracy)
         
+        # 使用scheduler更新学习率
+        scheduler.step(val_accuracy)
+        
         # 更新进度条描述
         train_bar.desc = f"Train Epoch [{epoch+1}/{epochs}], Loss: {avg_epoch_loss:.4f}, Train Accuracy: {train_accuracy:.4f}, Validation Accuracy: {val_accuracy:.4f}"
         print(f"Epoch [{epoch+1}/{epochs}], Loss: {avg_epoch_loss:.4f}, Train Accuracy: {train_accuracy:.4f}, Validation Accuracy: {val_accuracy:.4f}")
@@ -153,19 +160,41 @@ def train_model(model, train_loader, val_loader, device, learning_rate=0.001, ep
     # 保存模型权重
     if save_path is not None:
         torch.save(model.state_dict(), os.path.join(weight_path, 'logistic_regression.pth'))
-        
+        print(f"Model weights saved to {os.path.join(weight_path, 'logistic_regression.pth')}")
+    
     print("Training complete.")
     return model, history, losses
 
 
-# 可视化数据集
-def visualize_data(data, labels, title="Dataset"):
-    plt.figure(figsize=(8, 6))
-    plt.scatter(data[:, 0], data[:, 1], c=labels, cmap='viridis', edgecolor='k', s=80)
-    plt.title(title)
-    plt.xlabel('Feature 1')
-    plt.ylabel('Feature 2')
-    plt.colorbar()
+# 可视化数据集 - 使用PCA三维立体图
+def visualize_data(data, labels, title="Dataset PCA 3D Visualization"):
+    # 使用PCA将原始数据（4维特征）降维到3维
+    principal_components = PCA(n_components=3).fit_transform(data)
+    
+    # 创建3D图形
+    fig = plt.figure(figsize=(10, 8))
+    ax = fig.add_subplot(111, projection='3d', elev=-150, azim=110)
+    
+    # 绘制3D散点图
+    scatter = ax.scatter(principal_components[:, 0], 
+                        principal_components[:, 1], 
+                        principal_components[:, 2],
+                        c=labels, 
+                        cmap='viridis', 
+                        edgecolor='k', 
+                        s=80, 
+                        alpha=0.8)
+    
+    # 设置图表标题和坐标轴标签
+    
+    ax.set_xlabel('Principal Component 1')
+    ax.set_ylabel('Principal Component 2')
+    ax.set_zlabel('Principal Component 3')
+    
+    # 添加颜色条
+    cbar = plt.colorbar(scatter, ax=ax, pad=0.1)
+    cbar.set_label('Class')
+    
     plt.tight_layout()
     plt.show()
 
@@ -235,13 +264,7 @@ def visualize_decision_boundary(model, data, labels, device):
 
 # 增加混淆矩阵可视化函数
 def visualize_confusion_matrix(true_labels, predicted_labels, class_names=None):
-    """可视化混淆矩阵，用于评估分类模型的性能
-    
-    参数:
-    - true_labels: 真实标签列表
-    - predicted_labels: 模型预测的标签列表
-    - class_names: 类别名称列表，如果为None则使用数字索引
-    """
+   
     # 步骤1: 使用sklearn的confusion_matrix函数生成混淆矩阵
     # 混淆矩阵展示了真实标签与预测标签之间的对应关系
     # 对角线元素表示预测正确的样本数量，非对角线元素表示预测错误的样本数量
@@ -275,10 +298,9 @@ def visualize_confusion_matrix(true_labels, predicted_labels, class_names=None):
 def main():
     # 确保数据集已经加载完成
     input_size = dataset.features.shape[1]  # 输入特征数量
-    output_size = len(torch.unique(dataset.labels))  # 输出类别数量（鸢尾花有3个类别）
     
     # 创建逻辑回归模型
-    model = LogisticRegression(in_size=input_size, out_size=output_size).to(device)
+    model = IrisRegression(in_size=input_size).to(device)
     
     # 改进7：调整训练参数
     learning_rate = 0.001  # 对于Adam，通常可以使用这个学习率
@@ -304,7 +326,7 @@ def main():
     visualize_training(history, losses)
     
     # 可视化数据集
-    visualize_data(dataset.features.numpy(), dataset.labels.numpy(), title='Iris Dataset')
+    visualize_data(dataset.features.numpy(), dataset.labels.numpy(), title='Iris Dataset PCA 3D Visualization')
     
     # 可视化决策边界
     visualize_decision_boundary(model, dataset.features.numpy(), dataset.labels.numpy(), device)

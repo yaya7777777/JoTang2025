@@ -13,10 +13,11 @@ import sys
 import matplotlib.pyplot as plt
 
 
-class LinearRegression(nn.Module):
+
+class HousingRegression(nn.Module):
     # 线性回归模型
     def __init__(self, in_size, out_size):
-        super(LinearRegression, self).__init__()
+        super(HousingRegression, self).__init__()
         self.linear = nn.Linear(in_size, out_size)
         
     def forward(self, x):
@@ -201,7 +202,7 @@ def main():
     input_size = dataset.features.shape[1]  # 输入特征数量
     
     
-    model = LinearRegression(in_size=input_size, out_size=1).to(device)
+    model = HousingRegression(in_size=input_size, out_size=1).to(device)
     epochs = 100
     learning_rate = 0.001
     save_path = os.path.dirname(os.path.abspath(__file__))
