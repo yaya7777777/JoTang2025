@@ -28,5 +28,6 @@
     "markdown.preview.filteredExtensions": [],
     "files.associations": {
         "*.md": "markdown"
-    }
+    },
+    "cmake.sourceDirectory": "D:/JoTang2025/#4/demo-main/MakeFile"
 }

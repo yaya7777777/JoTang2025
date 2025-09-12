@@ -1,30 +1,32 @@
+
+import os
 import torch
 import matplotlib.pyplot as plt
-torch.manual_seed(123)
-
 from data import create_dataloaders
 from model import CNN
+import torch.nn as nn
+
+torch.manual_seed(123)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 train_loader, val_loader = create_dataloaders()
 
 model = CNN()
 model.to(device)
 
 # TODO: 设置你的 training parameters
-num_epochs = None
-lr = None
-weight_decay = None
+num_epochs = 15
+lr = 0.002
+weight_decay = 1e-4
 
 # TODO: 设置你的 cross-entropy loss function
-loss_fn = None
+loss_fn = nn.CrossEntropyLoss()
 
 # TODO: 设置你的优化器，注意用上你的 lr 和 weight_decay
-optimizer = None
+optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
 # TODO: 设置你的 learning rate scheduler
-scheduler = None
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
 
 # 用于画图
 train_loss_list = []
@@ -41,18 +43,21 @@ for epoch in range(num_epochs):
 
     for i, (images, labels) in enumerate(train_loader):
         # TODO: 将图像和标签移动到设备上
-
+        images = images.to(device)
+        labels = labels.to(device)
         # TODO: 将梯度清零
-
+        optimizer.zero_grad()
         # TODO: 通过模型进行前向传播
-
+        outputs = model(images)
         # TODO: 计算损失
-        loss = None
-
+        loss = loss_fn(outputs, labels)
         # TODO: 反向传播
-
+        loss.backward()
         # TODO: 更新权重
-
+        optimizer.step()
+        
+        
+        
         running_loss += loss.item() * images.size(0)
         _, predicted = torch.max(outputs, 1)
         correct += (predicted == labels).sum().item()
@@ -75,13 +80,18 @@ for epoch in range(num_epochs):
         epoch_val_loss = 0.
         for images, labels in val_loader:
             # TODO: 向前传播
-            outputs = None
-            loss = None
+            images = images.to(device)
+            labels = labels.to(device)
+            outputs = model(images)
+            loss = loss_fn(outputs, labels)
 
             # TODO: 从模型输出中获取预测标签 label
-            predicted = None
+            _, predicted = torch.max(outputs, 1)
 
             # TODO: 累加 correct 和 total
+            epoch_val_loss += loss.item() * images.size(0)
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)
 
 
         epoch_val_accuracy = correct / total
@@ -94,10 +104,16 @@ for epoch in range(num_epochs):
         print(f"Epoch [{epoch + 1}/{num_epochs}], Val Loss: {epoch_val_loss:.4f}, Val Acc: {epoch_val_accuracy:.4f}")
 
         # TODO: （可选）在这里，你可以保存效果最好的模型
+        best_val_accuracy = 0.0
+        best_model_state = None
+        if epoch_val_accuracy > best_val_accuracy:
+            best_val_accuracy = epoch_val_accuracy
+            best_model_state = model.state_dict()
 
 
 # 如果你之前没有保存模型，这里会保存最后一轮的模型状态
-torch.save(model.state_dict(), "q1_model.pt")
+model_save_path = os.path.join("task3", "results", "q1_model.pt")
+torch.save(model.state_dict(), model_save_path)
 
 # 绘制 training 和 validation 的 loss 和 accuracy 曲线
 fig, axs = plt.subplots(2, 1, figsize=(10, 10))
@@ -118,7 +134,8 @@ for ax in axs:
     ax.set_ylabel("Value")
 
 plt.tight_layout()
-plt.savefig(f"q1_plots.png", dpi=300)
+plot_save_path = os.path.join("task3", "results", "q1_plots.png")
+plt.savefig(plot_save_path, dpi=300)
 plt.clf()
 plt.close()
 
