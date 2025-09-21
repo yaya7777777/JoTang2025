@@ -1,0 +1,20 @@
+[
+{
+  "directory": "D:/Git/learngit/demo.c/demo-main/MakeFile/build",
+  "command": "C:\\MinGW\\mingw64\\bin\\gcc.exe  @CMakeFiles/demo.out.dir/includes_C.rsp -g -std=gnu11 -g -O2 -Wall -Werror -o CMakeFiles\\demo.out.dir\\hello.c.obj -c D:\\Git\\learngit\\demo.c\\demo-main\\MakeFile\\hello.c",
+  "file": "D:/Git/learngit/demo.c/demo-main/MakeFile/hello.c",
+  "output": "CMakeFiles/demo.out.dir/hello.c.obj"
+},
+{
+  "directory": "D:/Git/learngit/demo.c/demo-main/MakeFile/build",
+  "command": "C:\\MinGW\\mingw64\\bin\\gcc.exe  @CMakeFiles/demo.out.dir/includes_C.rsp -g -std=gnu11 -g -O2 -Wall -Werror -o CMakeFiles\\demo.out.dir\\lib\\add.c.obj -c D:\\Git\\learngit\\demo.c\\demo-main\\MakeFile\\lib\\add.c",
+  "file": "D:/Git/learngit/demo.c/demo-main/MakeFile/lib/add.c",
+  "output": "CMakeFiles/demo.out.dir/lib/add.c.obj"
+},
+{
+  "directory": "D:/Git/learngit/demo.c/demo-main/MakeFile/build",
+  "command": "C:\\MinGW\\mingw64\\bin\\gcc.exe  @CMakeFiles/demo.out.dir/includes_C.rsp -g -std=gnu11 -g -O2 -Wall -Werror -o CMakeFiles\\demo.out.dir\\lib\\mu.c.obj -c D:\\Git\\learngit\\demo.c\\demo-main\\MakeFile\\lib\\mu.c",
+  "file": "D:/Git/learngit/demo.c/demo-main/MakeFile/lib/mu.c",
+  "output": "CMakeFiles/demo.out.dir/lib/mu.c.obj"
+}
+]

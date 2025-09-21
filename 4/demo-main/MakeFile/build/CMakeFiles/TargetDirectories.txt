@@ -1,0 +1,4 @@
+D:/Git/learngit/demo.c/demo-main/MakeFile/build/CMakeFiles/demo.out.dir
+D:/Git/learngit/demo.c/demo-main/MakeFile/build/CMakeFiles/clean-all.dir
+D:/Git/learngit/demo.c/demo-main/MakeFile/build/CMakeFiles/edit_cache.dir
+D:/Git/learngit/demo.c/demo-main/MakeFile/build/CMakeFiles/rebuild_cache.dir
